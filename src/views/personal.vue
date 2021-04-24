@@ -4,124 +4,158 @@
             <div class="block">
                 <div class="loading-shade"></div>
                 <div class="introduciton">
-                    <div class="changeInfo" v-if="parseInt(this.$store.state.userid)==parseInt(this.$route.query.id)">
+                    <div class="changeInfo hidden-sm-and-down" v-if="parseInt(this.$store.state.userid)==parseInt(this.$route.query.id)">
                         <div @click="changeInfo" class="icon-i">
                             <i class="el-icon-s-custom"></i> 修改信息
                         </div>
                     </div>
-                    <img src="../assets/basicPage/1.jpg">
+                    <div class="avatar">
+                        <img src="../assets/basicPage/7.jpg" v-if="!this.user.userpicture">
+                        <img :src="this.user.userpicture" v-else>
+                    </div>
                     <h1>{{this.user.username}}</h1>
                     <p class="describe">{{this.user.describe}}</p>
                 </div>
             </div>
             <div class="article">
-                <el-tabs v-model="activeName" @tab-click="">
+                <el-button type="primary" class="editmyarticle" @click.native.prevent="handleClickEdit">管理我的文章</el-button>
+                <el-tabs v-model="activeName">
                     <el-tab-pane :label="getPersonalArticle" name="first" >
-                        <div v-for="(item,index) in article" class="allAritcles" @click="toArticle(index)">
+                        <div class="none" v-if="!this.article">
+                            这个人好懒，没有过文章
+                        </div>
+                        <div class="loading"
+                             v-loading="Aloading"
+                             v-if="Aloading==true"
+                             element-loading-text="拼命加载中"
+                             element-loading-spinner="el-icon-loading"
+                             element-loading-background="rgba(245, 245, 245, 0.8)"
+                        ></div>
+                        <div v-for="(item,index) in article" class="allAritcles" @click="toArticle(index)" v-else>
+                            <transition
+                                    name="custom-classes-transition"
+                                    enter-active-class="animated bounceIn"
+                                    leave-active-class="animated bounceOut"
+                            >
+                                <i class="el-icon-close" v-if="showdelete" @click.stop="deleteArticle(item)"></i>
+                            </transition>
                             <p class="title">{{item.articletitle}}</p>
                             <p class="someContent" v-html="item.articleabstract"></p>
                             <p class="time">
-                                <i class="el-icon-view">1234</i>
-                                <i class="el-icon-chat-dot-round">0</i>
+                                <i class="iconfont icon-dianzan">&nbsp;&nbsp;{{item.articlegives}}</i>
+                                <i class="el-icon-view">&nbsp;&nbsp;{{item.articleface}}</i>
                                 <span>{{item.releasetime | parseT}}</span>
                             </p>
+                        </div>
+                        <div class="pagination">
+                            <el-pagination
+                                    @current-change="handleCurrentChange"
+                                    :current-page.sync="currentPage3"
+                                    :page-size="5"
+                                    layout="prev, pager, next, jumper"
+                                    :total="total">
+                            </el-pagination>
                         </div>
                     </el-tab-pane>
                     <el-tab-pane :label="getPersonalMark" name="second">
-                        <div v-for="(item,index) in markArticle" class="allAritcles" @click="toMarkArticle(index)">
+                        <div class="none" v-if="!this.markArticle">
+                            这个人好高傲，从不收藏别人的文章
+                        </div>
+                        <div class="loading"
+                             v-loading="Aloading"
+                             v-if="Aloading==true"
+                             element-loading-text="拼命加载中"
+                             element-loading-spinner="el-icon-loading"
+                             element-loading-background="rgba(245, 245, 245, 0.8)"
+                        ></div>
+                        <div v-for="(item,index) in markArticle" class="allAritcles" @click="toMarkArticle(index)" v-else>
+                            <transition
+                                    name="custom-classes-transition"
+                                    enter-active-class="animated bounceIn"
+                                    leave-active-class="animated bounceOut"
+                            >
+                                <i class="el-icon-close" v-if="showdelete" @click.stop="deleteArticle(item)"></i>
+                            </transition>
                             <p class="title">{{item.articletitle}}</p>
                             <p class="someContent" v-html="item.articleabstract"></p>
                             <p class="time">
-                                <i class="el-icon-view">1234</i>
-                                <i class="el-icon-chat-dot-round">0</i>
+                                <i class="iconfont icon-dianzan">&nbsp;&nbsp;{{item.articlegives}}</i>
+                                <i class="el-icon-view">&nbsp;&nbsp;{{item.articleface}}</i>
                                 <span>{{item.releasetime | parseT}}</span>
                             </p>
                         </div>
+                        <div class="pagination">
+                            <el-pagination
+                                    @current-change="handleCurrentChange2"
+                                    :current-page.sync="currentPage2"
+                                    :page-size="5"
+                                    layout="prev, pager, next, jumper"
+                                    :total="total2">
+                            </el-pagination>
+                        </div>
                     </el-tab-pane>
+
                 </el-tabs>
             </div>
         </el-main>
-        <el-aside width="400px">
-            <el-button type="primary" class="ask">问题咨询</el-button>
-            <div class="news">
-                <div v-for="item in questions" class="questions">
-                    <h3>{{item.title}}</h3>
-                    <p>{{item.describe}}</p>
-                    <p class="Lmore"><i class="el-icon-caret-right"></i>查看更多</p>
-                </div>
-                <div class="read" ref="read">
-                    <p class="readtitle">热门阅读</p>
-                    <ul>
-                        <li v-for="item in title"><i class="el-icon-caret-right"></i>{{item}}</li>
-                    </ul>
-                </div>
-            </div>
-        </el-aside>
     </el-container>
 </template>
 
 <script>
     import {parseTime} from "../utils";
+    import {getPArticleNums,getMarkArticleN,deleteArt} from "../axios/user";
+
     export default {
         name: "personal",
         mounted() {
-            console.log(this.$route.query.id)
-            console.log(this.$store)
-            this.$store.dispatch('getArticle', this.$route.query.id).then(result => {
-                // console.log(result)
-                this.article = result.data.msg
-                // console.log(this.article)
-            })
-            this.$store.dispatch('getOne',parseInt(this.$route.query.id)).then(result=>{
-                console.log('getone',result)
+            this.getArticle()  //获取我的文章内容
+            this.getArticleNums()
+            this.getMarkArticleNums()
+            this.getMyMarkArticle()
+            this.$store.dispatch('getOne',parseInt(this.$route.query.id)).then(result=>{  //获取我的个人信息
                 this.user = result.data.data[0]
                 // console.log(this.user)
             })
-            this.$store.dispatch('getPerMark',parseInt(this.$route.query.id)).then(result=>{
-                console.log('getpersonalMark',result)
-                this.markArticle = result.data.msg
-            })
-            window.addEventListener('scroll', this.handleScroll, true)
         },
         data() {
             return {
-                user: {},
+                user: {userpicture:null},
                 activeName: 'first',
-                questions: [{
-                    title: '马化腾重回中国首富',
-                    describe: '开发者入侵微博服务器刷流量，被判5年 | 极客日报'
-                }, {
-                    title: '未来畅想',
-                    describe: '到2035年，你觉得科技领域会出现哪些颠覆性的创新技术?'
-                }],
                 article:[],
-                markArticle:[],
-                title:[`如果电脑没装这7个软件，基本算是废了！ - 16,948 浏览`,
-            `WPS 2019专业版安装包+永久授权激活码 - 73,351 浏览`,
-            `APKCombo-国内直接下载Google Play所有应用。 - 66,434 浏览`,
-            `百度网盘超级会员账号分享，低调使用。 - 37,584 浏览`,
-            `洛雪音乐助手—支持6大音乐平台，QQ音乐、网易音乐 - 33,476 浏览`,
-            `四大经典迅雷版本，无广告无限制统统支持！！ - 29,381 浏览`,
-            `Blackmart（谷歌黑市场）第三方谷歌市场替代软件，Google Play直接下载 - 26,099 浏览`,
-            `高清无水印无广告影视资源下载网站分享！ - 24,833 浏览`,
-            `无需登录账号的百度网盘高速下载方法！百度网盘直链在线解析网站 - 23,416 浏览`,
-            `PotPlayer播放器+8000个电影电视直播源 - 20,949 浏览`,
-            `PotPlayer播放器+上千个电影电视直播源 - 20,767 浏览`]
+                Aloading:false,
+                markArticle:null,
+                currentPage3:1,
+                total:0,  //和我的文章有关
+                total2:0,  //和收藏有关
+                currentPage2:0,
+                showdelete:false
             }
         },
         methods: {
-            handleScroll(e) {         //监听滚动条
-                var read = document.querySelector(".read")
-                console.log(read.offsetTop)
-                // console.log(window.scrollY)
-                let scrollTop = document.body.scrollTop || document.documentElement.scrollTop;
-                // if ((window.scrollY + 60) > (read.offsetTop)) {
-                //     read.style.position = 'absolute'
-                //     read.style.top = read.offsetTop + 60 + (window.scrollY - read.offsetTop) + 'px'
-                //     console.log("进来了",window.scrollY - read.offsetTop)
-                // }else {
-                //
-                // }
+            deleteArticle(item){
+                this.$confirm('确定删除该文章吗?', '提示', {
+                    confirmButtonText: '确定',
+                    cancelButtonText: '取消',
+                    type: 'warning'
+                }).then(() => {
+                    deleteArt(item.articleid).then(result=>{
+                        this.$message({
+                            type:'success',
+                            message:'删除成功'
+                        })
+                    })
+                    setTimeout(()=>{
+                        location.reload()
+                    },1000)
+                }).catch(() => {
+                    this.$message({
+                        type: 'info',
+                        message: '已取消删除'
+                    });
+                });
+            },
+            handleClickEdit(){
+              this.showdelete = !this.showdelete
             },
             changeInfo(id) {
                 this.$router.push({
@@ -146,6 +180,40 @@
                         articleid:parseInt(this.markArticle[index].articleid)
                     }
                 })
+            },
+            async getArticle(offset=0){
+                this.Aloading = true
+                await this.$store.dispatch('getArticle',{id:this.$route.query.id,offset:offset}).then(result => {
+                    console.log(result)
+                    this.article = result.data.msg
+                    this.Aloading = false
+                })
+            },
+            async getMyMarkArticle(offset=0){
+                this.$store.dispatch('getPerMark',{id:this.$route.query.id,offset:offset}).then(result=>{  //获取我的收藏列表文章
+                    if(result.data.msg){
+                        this.markArticle = result.data.msg
+                        console.log(this.markArticle)
+                    }
+                })
+            },
+            getArticleNums(id){
+                id = this.$route.query.id
+                getPArticleNums(id).then(result=>{
+                    this.total = result.data.msg[0].nums
+                })
+            },
+            getMarkArticleNums(id){
+                id = this.$route.query.id
+                getMarkArticleN(id).then(result=>{
+                    this.total2 = result.data.msg[0].nums
+                })
+            },
+            handleCurrentChange(){
+                this.getArticle((this.currentPage3-1)*5)
+            },
+            handleCurrentChange2(){
+                this.getMyMarkArticle((this.currentPage2-1)*5)
             }
         },
         computed: {
@@ -167,6 +235,48 @@
     }
 </script>
 <style scoped>
+    @import "~@/assets/font/iconfont.css";
+    .none{
+        width: 100%;
+        height: 100px;
+        text-align: center;
+        line-height: 100px;
+        font-size: 20px;
+        background-color: rgb(240,245,245);
+        color: #6b6b6b;
+    }
+    .editmyarticle{
+        position: absolute;
+        width: auto;
+        font-size: 12px;
+        right: 20px;
+        border-radius: 90%;
+        cursor: pointer;
+        z-index: 5;
+    }
+    .el-icon-close{
+        position: absolute;
+        right: 20px;
+        font-size: 20px;
+        font-weight: bold;
+        color: darkcyan !important;
+        z-index: 10;
+    }
+
+    .pagination{
+        margin-top: 5px;
+    }
+
+    .loading {
+        height: 140px;
+    }
+
+    .avatar{
+        display: inline-block;
+        border-radius: 50%;
+        overflow: hidden;
+    }
+
     .readtitle{
         display: inline-block;
         border-left: 4px solid blue;
@@ -197,6 +307,9 @@
     .allAritcles .time i:nth-child(2){
         margin-left: 30px;
     }
+    .allAritcles .time i:nth-child(1) {
+        font-size: 18px;
+    }
     .allAritcles .time{
         position: relative;
         color: #999;
@@ -205,6 +318,10 @@
     .allAritcles .time span{
         position: absolute;
         right: 0;
+    }
+    .el-icon-view,
+    .el-icon-chat-dot-round{
+        font-size: 20px;
     }
     .someContent{
         margin-top: 10px;
@@ -256,7 +373,7 @@
     .changeInfo {
         cursor: pointer;
         position: absolute;
-        right: 50px;
+        right: 30px;
         top: 5px;
         font-size: 14px;
         width: 120px;
@@ -358,6 +475,7 @@
         color: white;
     }
 
+
     .more {
         display: block;
         position: relative;
@@ -405,5 +523,6 @@
 
     .el-container{
         padding-top: 60px;
+        min-height: 101vh;
     }
 </style>

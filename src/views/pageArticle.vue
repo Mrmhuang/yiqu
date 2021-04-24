@@ -1,13 +1,14 @@
 <template>
     <div class="main">
         <el-container>
-            <el-aside width="25%">
-                <img src="../assets/basicPage/1.jpg">
-                <h2>123</h2>
+            <el-aside class="hidden-sm-only hidden-xs-only" width="25%">
+                <img :src="this.userpicture">
+                <h2>{{this.username}}</h2>
             </el-aside>
             <el-main ref="content">
                 <div class="decoreation"></div>
                 <h1>{{this.art.articletitle}}</h1>
+                <p v-html="this.art.articleabstract" class="content"></p>
                 <p class="time">
                     <i class="el-icon-time"></i>
                     <span>{{this.art.releasetime | parseT}}</span>
@@ -15,13 +16,29 @@
                 <p class="tags tagtype" ref="tags">
                     <span>文章标签：</span><span v-for="item in this.tags" class="tag">{{item}}</span>
                 </p>
-                <p v-html="this.art.articleabstract" class="content"></p>
-                <p v-html="this.art.articlecontent" class="content"></p>
-                <div class="marktable" ref="marktable">
+                <el-divider></el-divider>
+                <mavon-editor
+                        class="md"
+                        :value="this.art.articlecontent"
+                        :subfield = "false"
+                        :defaultOpen = "'preview'"
+                        :toolbarsFlag = "false"
+                        :editable="false"
+                        :scrollStyle="true"
+                        :ishljs = "true"
+                        :boxShadow="false"
+                ></mavon-editor>
+                <div class="marktable" id="marktable" ref="marktable">
+                    <div class="dianzan">
+                        <i class="iconfont icon-dianzan" v-show="!iszan" @click="zanArticle(articleid)"></i>
+                        <i class="iconfont icon-dianzan1-copy" v-show="iszan"
+                           @click.stop="cancelZanArticle(articleid)"></i>
+                        <span>点赞</span>
+                    </div>
                     <div>
                         <i class="el-icon-star-off" id="staroff" v-show="!ismark" @click="markArticle(articleid)"></i>
                         <i class="el-icon-star-on" id="staron" v-show="ismark"
-                           @click="cancelMarkArticle(articleid)"></i>
+                           @click.stop="cancelMarkArticle(articleid)"></i>
                         <span>收藏</span>
                     </div>
                     <div><i class="el-icon-chat-dot-round"></i><span>评论</span></div>
@@ -40,17 +57,19 @@
                     <p class="title">评论列表</p>
                     <div class="eachcomment" v-for="(item,index) in this.commonComment">
                         <div class="comment-inner">
-                            <i class="el-icon-chat-line-round" @click="reply(index)"></i>
+
                             <div class="vcard">
                                 <img alt="头像"
-                                     :src="getVcard(item.userid)" height="60" width="60">
+                                     :src="getVcard(item.userid)" height="60" width="60" v-if="getVcard(item.userid)">
+                                <img alt="头像"
+                                     src="../assets/basicPage/7.jpg" height="60" width="60" v-else>
                             </div>
                             <div class="comment-body">
                                 <div class="nickname" @click="toPersonal(item.userid)">{{getName(item.userid)}}<br/>
                                     <span class="comment-time">{{item.commenttime | parseT}}</span>
                                 </div>
                                 <div class="comment-text">
-                                    <p>{{item.commentcontent}}</p>
+                                    <p>{{item.commentcontent}}<i class="el-icon-chat-line-round" @click="reply(index)"></i></p>
                                 </div>
                             </div>
                         </div>
@@ -65,12 +84,15 @@
                             </div>
                         </div>
                         <div v-for="(item2,index2) in item.replyComments" class="replyDiv">
-                                <img alt="头像"
-                                     :src="getVcard(item2.userid)" height="20" width="20" class="replyAvatar"><span class="replyname" v-text="getName(item2.userid)" @click="toPersonal(item2.userid)"></span>
+                                <img alt="头像" :src="getVcard(item2.userid)" height="20" width="20" class="replyAvatar" v-if="getVcard(item2.userid)">
+                                 <img alt="头像" src="../assets/basicPage/7.jpg" height="20" width="20" class="replyAvatar" v-else>
+                            <span class="replyname" v-text="getName(item2.userid)" @click="toPersonal(item2.userid)"></span>
                             <span class="replySpan">回复</span>
                                 <span v-if="item2.userid!==item2.touserid">
                                     <img alt="头像"
-                                         :src="getVcard(item2.touserid)" height="20" width="20" class="replyAvatar">
+                                         :src="getVcard(item2.touserid)" height="20" width="20" class="replyAvatar" v-if="getVcard(item2.touserid)">
+                                    <img alt="头像"
+                                         src="../assets/basicPage/7.jpg" height="20" width="20" class="replyAvatar" v-else>
                                     <span v-text="getName(item2.touserid)" class="replyname" @click="toPersonal(item2.touserid)"></span>
                                 </span>
                                     <span class="replySpan">:</span>
@@ -92,7 +114,6 @@
                                 </div>
                             </div>
                         </div>
-
                     </div>
                 </div>
             </div>
@@ -102,32 +123,60 @@
 
 <script>
     import {parseTime} from "../utils";
-    import {ismark, getPageComment, getSomePerson,addReply} from "../axios/user";
+    import {iszan, ismark, getPageComment, getSomePerson,addReply, getOnePersonal, addArticleFace, addArticleEnshrineNums, cancelArticleEnshrineNums,addArticleGives,cancelArticleGives} from "../axios/user";
 
     export default {
         name: "pageArticle",
         mounted() {
-            window.addEventListener('scroll', this.handleScroll, true)
+            window.addEventListener('scroll', this.handleScroll, true)  //添加滚动事件
             this.articleid = this.$route.query.articleid
-            this.$store.dispatch('getPageArticle', this.$route.query.articleid).then(res => {
-                // console.log('res', res)
+            this.$store.dispatch('getPageArticle', this.$route.query.articleid).then(res => {    //获取文章的信息
                 this.art = res.data.msg[0]
+                this.mark = this.art.articleenshrinenums
                 this.tags = this.art.articlelabel.split(',')
                 if (this.tags[0] == "") {
-                    console.log('及拿来了')
                     this.$refs.tags.innerHTML = '文章标签：无'
                     this.$refs.tags.setAttribute("class", "tags")
                 }
-                // console.log(this.tags)
+                getOnePersonal(this.art.userid).then(userInfo=>{  //获取个人信息
+                    this.username = userInfo.data.data[0].username
+                    this.userpicture = userInfo.data.data[0].userpicture
+                })
+
             })
-            ismark({userid: this.$store.state.userid, articleid: this.$route.query.articleid}).then(result => {
+            ismark({userid: this.$store.state.userid, articleid: this.$route.query.articleid}).then(result => {  //获取用户是否收藏过
                 if (result.data.msg[0].nums > 0) {
                     this.ismark = true
                 } else {
                     this.ismark = false
                 }
             })
+
+            iszan({userid: this.$store.state.userid, articleid: this.$route.query.articleid}).then(result => {   //获取用户是否赞过
+                if (result.data.msg[0].nums > 0) {
+                    this.iszan = true
+                } else {
+                    this.iszan = false
+                }
+            })
+
             this.getPageC()
+
+            setTimeout(()=>{
+                var marktable = document.querySelector('.marktable')
+                var elMain = document.querySelector('.el-main')
+                // console.log(document.documentElement.clientHeight < elMain.getBoundingClientRect().bottom)
+                if(document.documentElement.clientHeight < elMain.getBoundingClientRect().bottom){  //滚动事件
+                    marktable.style.position = 'absolute'
+                    marktable.style.left = 0
+                    marktable.style.top = document.documentElement.clientHeight - 140 + 'px'
+                }
+            },200)
+
+            addArticleFace(this.$route.query.articleid).then(result=>{  //让文章观看量+1
+                // console.log('')
+            })
+
         },
         data() {
             return {
@@ -143,7 +192,10 @@
                 replyComment:'',
                 commonComment:[],
                 replyComments:[],
-                replyindex2:-2
+                replyindex2:-2,
+                username:null,
+                iszan:false,
+                userpicture:null
             }
         },
         filters: {
@@ -161,26 +213,32 @@
                 })
                 window.open(toPersonal.href,'_blank')
             },
-            submitReply(commentid,toUserId){
-                let temp = {}
-                temp.articleid = this.$route.query.articleid
-                temp.parentcommentid = commentid
-                temp.content = this.replyComment
-                temp.userid = this.$store.state.userid
-                temp.touserid = toUserId
-                addReply(temp).then(res=>{
-                    console.log("回复成功")
-                    this.replyindex = -1
-                    this.replyindex2 = -1
-                    this.$message({
-                        type: 'success',
-                        message: '回复成功',
-                        customClass:'zZindex'
+            submitReply(commentid,toUserId){  //提交回复
+                if(this.$store.state.userid){
+                    let temp = {}
+                    temp.articleid = this.$route.query.articleid
+                    temp.parentcommentid = commentid  //被回复人的评论id
+                    temp.content = this.replyComment
+                    temp.userid = this.$store.state.userid
+                    temp.touserid = toUserId  //被回复人的id
+                    addReply(temp).then(res=>{
+                        this.replyindex = -1
+                        this.replyindex2 = -1
+                        this.$message({
+                            type: 'success',
+                            message: '回复成功',
+                            customClass:'zZindex'
+                        })
+                        location.reload()
                     })
-                    location.reload()
-                })
+                }else{
+                    this.$message({
+                        showClose: true,
+                        message: '请先登陆'
+                    });
+                }
             },
-            getPageC(){
+            getPageC(){  //获取全部评论
                 getPageComment(this.$route.query.articleid).then(result => {
                     this.comment = result.data.msg   //全部评论
                     this.replyComments = this.comment.filter(function (item,index) {
@@ -198,9 +256,6 @@
                             }
                         }
                     }
-                    console.log(this.replyComments)
-                    console.log(this.commonComment)
-                    console.log(this.comment)
                     const map = new Map();
                     const get = []
                     if (this.comment.length > 0) {
@@ -216,45 +271,57 @@
                                 newmap.set(res.data.msg[i].userid, res.data.msg[i])
                             }
                             this.someInfo = newmap
-                            console.log(this.someInfo)
+                            // console.log(this.someInfo)
                         })
                     }
 
                 })
             },
-            submitComment() {
-                let temp = {}
-                temp.content = this.mycomment
-                temp.articleid = this.$route.query.articleid
-                temp.userid = this.$store.state.userid
-                this.$store.dispatch('submitComment', temp).then(res => {
-                    console.log('submitcomment', res)
-                    this.$message({
-                        type: 'success',
-                        message: '添加成功',
-                        customClass:'zZindex'
+            submitComment() {  //增加评论
+                if(this.$store.state.userid){
+                    let temp = {}
+                    temp.content = this.mycomment
+                    temp.articleid = this.$route.query.articleid
+                    temp.userid = this.$store.state.userid
+                    this.$store.dispatch('submitComment', temp).then(res => {
+                        this.$message({
+                            type: 'success',
+                            message: '添加成功',
+                            customClass:'zZindex'
+                        })
+                        this.mycomment = ""
+                        this.getPageC()
                     })
-                    this.mycomment = ""
-                    this.getPageC()
-                })
+                }else {
+                    this.$message({
+                        showClose: true,
+                        message: '请先登陆'
+                    });
+                }
             },
             handleScroll() {
                 let scrollTop = document.body.scrollTop || document.documentElement.scrollTop;
-                if (this.$refs.foot.getBoundingClientRect() && this.$refs.foot.getBoundingClientRect().y > (window.innerHeight - 0)) {
-                    var marktable = document.querySelector(".marktable")
+                var marktable = document.querySelector('.marktable')
+                var elMain = document.querySelector('.el-main')
+                if(document.documentElement.clientHeight < elMain.getBoundingClientRect().bottom - 70){
                     marktable.style.position = 'absolute'
                     marktable.style.left = 0
-                    marktable.style.top = window.innerHeight - 140 + scrollTop + 'px'
-                } //监听滚动条
+                    marktable.style.top = document.documentElement.clientHeight - 140 + scrollTop + 'px'
+                }else{
+                    marktable.style.position = 'static'
+                }
             },
-            markArticle(articleid) {
+            markArticle(articleid) {  //收藏文章
                 if (this.$store.state.userid) {
                     this.$store.dispatch('markArticle', articleid).then(res => {
-                        console.log('mark', res)
+                        // console.log('mark', res)
                         this.$message({
                             type: 'success',
                             message: '收藏成功'
                         })
+                    })
+                    addArticleEnshrineNums(articleid).then(result=>{
+                        // console.log('收藏加1')
                     })
                     this.ismark = true
                 } else {
@@ -264,16 +331,20 @@
                         customClass:'zZindex'
                     })
                 }
-            }, cancelMarkArticle(articleid) {
+            },
+            cancelMarkArticle(articleid) {  //取消收藏文章
                 if (this.$store.state.userid) {
                     this.$store.dispatch('cancelMarkArticle', articleid).then(res => {
-                        console.log('cancelMark', res)
+                        // console.log('cancelMark', res)
                         this.$message({
                             type: 'success',
                             message: '取消成功'
                         })
                     })
                     this.ismark = false
+                    cancelArticleEnshrineNums(articleid).then(result=>{
+                        // console.log('取消收藏减1')
+                    })
                 } else {
                     this.$message({
                         type: 'warn',
@@ -282,34 +353,85 @@
                     })
                 }
             },
-            getVcard(id){
+            zanArticle(articleid) {  //点赞文章
+                if (this.$store.state.userid) {
+                    this.iszan = true
+                    addArticleGives(articleid,this.$store.state.userid).then(result=>{
+                        this.$message({
+                            type: 'success',
+                            message: '成功点赞'
+                        })
+                    })
+                } else {
+                    this.$message({
+                        type: 'warn',
+                        message: '请先登陆',
+                        customClass:'zZindex'
+                    })
+                }
+            },
+            cancelZanArticle(articleid) {  //取消点赞文章
+                if (this.$store.state.userid) {
+                    this.iszan = false
+                    cancelArticleGives(articleid,this.$store.state.userid).then(result=>{
+                            this.$message({
+                                type: 'success',
+                                message: '取消点赞成功'
+                            })
+                    })
+                } else {
+                    this.$message({
+                        type: 'warn',
+                        message: '请先登陆',
+                        customClass:'zZindex'
+                    })
+                }
+            },
+            getVcard(id){  //获取个人头像
                 return this.someInfo.get(id).userpicture
             },
-            getName(id){
+            getName(id){  //获取个人的用户名
                 return this.someInfo.get(id).username
             },
-            reply(index){
+            reply(index){  //跟回复框的显示和删除有关
                 this.replyindex = -1
                 this.replyindex2 = -1
                 this.replyindex = index
             },
-            reply2(index){
+            reply2(index){ //跟回复框的显示和删除有关
                 this.replyindex = -1
                 this.replyindex2 = -1
               this.replyindex2 = index
-                console.log(this.replyindex2)
+                // console.log(this.replyindex2)
             },
-            cancelReply(){
+            cancelReply(){  //跟回复框的显示和删除有关
                 this.replyindex = -1
                 this.replyindex2 = -1
             }
-        },
-        computed:{
         }
     }
 </script>
 
 <style scoped>
+    @import "~assets/font/iconfont.css";
+    .md{
+        margin-left: -20px;
+        margin-right: -20px;
+        margin-bottom: 50px;
+    }
+
+    .v-note-panel{
+        border: none !important;
+    }
+
+    /deep/ .v-show-content{
+        background-color: white !important;
+    }
+
+    .v-note-wrapper{
+        border: none !important;
+    }
+
     .replyname{
         margin: 0 2px 0 5px;
         font-size: 12px;
@@ -384,9 +506,11 @@
         width: 80%;
     }
     .comment-text{
+        position: relative;
         font-size: 14px;
         line-height: 1.6;
         color: #333;
+        width: calc(100% - 50px);
     }
     .vcard{
         float: left;
@@ -423,9 +547,10 @@
         margin-top: 10px;
     }
     .el-icon-chat-line-round{
-        position: absolute;
-        right: 10px;
-        top: 50%;
+        font-size: 15px;
+        position: relative;
+        left: 3px;
+        bottom: 1px;
         cursor: pointer;
     }
 
@@ -469,7 +594,6 @@
         width: 85%;
         height: auto;
         margin-top: 30px;
-        /*background: #42b983;*/
         margin: 0 auto;
     }
 
@@ -479,6 +603,13 @@
 
     .marktable div {
         display: inline-block;
+        margin-left: 20px;
+    }
+
+
+    .marktable .icon-dianzan1-copy{
+        font-size: 25px;
+        color: red;
     }
 
     .time i {
@@ -516,13 +647,14 @@
     .marktable {
         position: absolute;
         width: 100%;
-        background: rgb(240, 240, 240);
+        background: #c8e6c6;
         border-left: 2px solid silver;
         line-height: 50px;
         box-sizing: border-box;
         bottom: 0;
         left: 0;
         height: 50px;
+        z-index: 9999;
     }
 
     .tag {
@@ -554,10 +686,16 @@
     }
 
     .content {
-        margin-top: 80px;
-        margin-bottom: 100px;
+        margin-top: 30px;
+        font-size: 25px;
+        font-weight: 500;
+        color: gray;
+        margin-bottom: 10px;
     }
 
+    ::v-deep .content img{
+        width:100%;
+    }
     .el-main h1 {
         font-weight: 900;
         font-size: 28px;
@@ -565,9 +703,10 @@
 
     .el-main {
         width: 72%;
+        margin-left: 50px;
         position: relative;
-        left: 40px;
-        right: 0;
+        /*left: 40px;*/
+        /*right: 0;*/
         background: white;
         overflow: hidden;
     }
@@ -605,9 +744,40 @@
 
     .main{
         padding-top: 60px;
+        padding-bottom: 100px;
     }
 
     .zZindex {
         z-index:3000 !important;
+    }
+
+    body{
+        max-width: 100vw;
+        overflow: hidden;
+    }
+
+    @media all and (max-width: 768px) {
+        .el-container,.el-main{
+            margin: 0;
+        }
+        .el-container{
+            width: calc(100%);
+            top: 0;
+        }
+        .el-main{
+            width:100%;
+        }
+        .maincontent{
+            overflow: hidden;
+        }
+        .comment{
+            padding-right: 0;
+        }
+        .sub{
+            display: flex;
+        }
+        #marktable {
+           position: static !important;
+        }
     }
 </style>

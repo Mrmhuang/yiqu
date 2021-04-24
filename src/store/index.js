@@ -26,25 +26,28 @@ export default new Vuex.Store({
     },
     SET_AVATAR: (state, avatar) => {
       state.avatar = avatar
+    },
+    SET_ROLE: (state, role) => {
+      state.role = role
     }
   },
   actions: {
-    loginM({commit,dispatch,state},userInfo){  //请求数据库然后登陆
+    loginM({commit,dispatch,state},userInfo){  //登陆请求数据库然后登陆
       return new Promise((resolve,reject)=>{
-        console.log("进来了login".userInfo)
         getUser(userInfo).then((response)=>{
-          let token = response.data.token
-          commit('SET_USER',response.data.user.username)
-          commit('SET_USERID',response.data.user.userid)
-          commit('SET_TOKEN', token)
-          setToken(token)
-          if(token){
-            console.log(response)
-            checkAdmin(response.data.user.userid).then(result1=>{
-              console.log(result1)
+          if(response.data.code==200){  //如果成功返回数据，说明登陆成功
+            var token = response.data.token
+            var username = response.data.user.username
+            var userid = response.data.user.userid
+            commit('SET_USER',username)
+            commit('SET_USERID',userid)
+            commit('SET_TOKEN', token)
+            setToken(token)
+          }
+          if(token){  //登陆赋予了token后立刻看看是否是管理员，是的话就增加登陆记录
+            checkAdmin(userid).then(result1=>{
               if(result1.data.msg!==null){
                 state.role = 'admin'
-                console.log('staterole',state.role)
                 addCourrstage(result.data.data[0].userid,result.data.data[0].username).then(result2=>{
                   if(result2.status == 200){
                     console.log("添加成功")
@@ -63,48 +66,43 @@ export default new Vuex.Store({
     },
     logout({commit}){
       return new Promise((resolve,reject)=>{
-        console.log("进来了")
         removeToken()
         setToken(null)
         commit('SET_USERID',null)
         commit('SET_USER',null)
+        commit('SET_ROLE',null)
         resolve()
       })
     } ,
-    getInfo({commit,state},hastoken){
+    getInfo({commit,state}){  //hastoken
       return new Promise((resolve, reject) => {
-        getInfo(hastoken).then((result)=>{
-          // if(result)
-          if(result.data.data.code == '-2'){
-            alert('身份失效了，请重新登陆')
-            commit('SET_USER',null)
-            commit('SET_USERID',null)
-            removeToken()
-            this.$router.push('/')
-          } else{
-            commit('SET_USER',result.data.data[0].username)
-            commit('SET_USERID',result.data.data[0].userid)
-            checkAdmin(result.data.data[0].userid).then(result1=>{
-              // console.log(result1)
-              if(result1.data.msg!==null){
-                state.role = 'admin'
-                // console.log('staterole',state.role)
-                addCourrstage(result.data.data[0].userid,result.data.data[0].username).then(result2=>{
-                  if(result2.status == 200){
-                    // console.log("添加成功")
-                  }
-                })
-              }
-            })
-            resolve("getInfoSuccess")
-          }
+        getInfo().then((result)=>{
+              var username = result.data.data[0].username
+              var userid = result.data.data[0].userid
+              checkAdmin(userid).then(result1=>{
+                if(result1.data.msg!==null){
+                  commit('SET_ROLE','admin')
+                }
+              })
+              commit('SET_USER',username)
+              commit('SET_USERID',userid)
+              resolve("getInfoSuccess")
         })
+      })
+    },
+    resetToken({ commit }){
+      return new Promise(resolve => {
+          commit('SET_USER',null)
+          commit('SET_USERID',null)
+          commit('SET_ROLE',null)
+          removeToken()
+          // console.log(this)
+          resolve()
       })
     },
     register({commit},registerForm){
       return new Promise((resolve, reject) => {
         try{
-          console.log(registerForm)
           registerUser(registerForm).then((result)=>{
             resolve(result)
           })
@@ -133,9 +131,12 @@ export default new Vuex.Store({
         })
       })
     },
-    getArticle({commit},id){
+    getArticle({commit},text){
+      let offset = text.offset
+      let id = text.id
+      console.log(offset)
       return new Promise((resolve, reject) => {
-        gArticle(id).then(result=>{
+        gArticle(id,offset).then(result=>{
           resolve(result)
         })
       }).catch(e=>{
@@ -187,9 +188,11 @@ export default new Vuex.Store({
         console.log(e)
       })
     },
-    getPerMark({commit},userid){
+    getPerMark({commit},text){
+      let userid = text.id
+      let offset = text.offset
       return new Promise((resolve,reject)=>{
-        getPMark(userid).then(res=>{
+        getPMark(userid,offset).then(res=>{
           resolve(res)
         }).catch(e=>{
           console.log(e)

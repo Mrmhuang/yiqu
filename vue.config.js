@@ -4,11 +4,12 @@ function resolve(dir) {
 }
 
 module.exports = {
+    publicPath:'.',
     chainWebpack: config => {  //路径简写
         config.resolve.alias
             .set("@", resolve("src"))
             .set("assets", resolve("src/assets"))
             .set("components", resolve("src/components"))
             .set("views", resolve("src/views"))
-    },
+    }
 }

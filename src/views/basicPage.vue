@@ -3,16 +3,16 @@
         <el-main>
             <div class="block">
                 <el-carousel trigger="click" height="350px">
-                    <el-carousel-item :key="1">
-                        <img src="../assets/basicPage/1.jpg">
+                    <el-carousel-item :key="1" @click.native.prevent="pushBasicArticle(6)">
+                        <img src="../assets/basicPage/Windows10.jpg">
                     </el-carousel-item>
-                    <el-carousel-item :key="2">
+                    <el-carousel-item :key="2" @click.native.prevent="pushBasicArticle(7)">
                         <img src="../assets/basicPage/2.jpg">
                     </el-carousel-item>
-                    <el-carousel-item :key="3">
+                    <el-carousel-item :key="3" @click.native.prevent="pushBasicArticle(8)">
                         <img src="../assets/basicPage/3.jpg">
                     </el-carousel-item>
-                    <el-carousel-item :key="4">
+                    <el-carousel-item :key="4" @click.native.prevent="pushBasicArticle(9)">
                         <img src="../assets/basicPage/4.png">
                     </el-carousel-item>
                 </el-carousel>
@@ -20,20 +20,21 @@
             <div class="article">
                 <el-tabs v-model="activeName" @tab-click="handleClick">
                     <el-tab-pane v-for="(item,index) in articleClass" :label="item" :name="item">
-                        <div class="loading"
-                             v-loading="Aloading"
-                             v-if="Aloading==true"
-                             element-loading-text="拼命加载中"
-                             element-loading-spinner="el-icon-loading"
-                             element-loading-background="rgba(245, 245, 245, 0.8)"
-                        ></div>
+                        <div class="loading" v-loading="Aloading" v-if="Aloading==true" element-loading-text="拼命加载中"
+                            element-loading-spinner="el-icon-loading"
+                            element-loading-background="rgba(245, 245, 245, 0.8)"></div>
                         <div v-else>
-                            <div v-for="(item,index) in Allarticles[item]" class="allAritcles" @click="toArticle(index)">
-                                <span class="articleClass" v-if="item.articleClass">{{item.articleClass}}</span>
-                                <p class="title">{{item.articletitle}}</p>
-                                <p class="someContent" v-html="item.articleabstract"></p>
+                            <div v-for="(item1,index) in Allarticles[item]" class="allAritcles"
+                                @click="toArticle(index)">
+
+                                <span class="articleClass hidden-md-and-down"
+                                    v-if="item=='最新博文'">{{item1.articleClass}}</span>
+                                <p class="title">{{item1.articletitle}}</p>
+                                <p class="someContent" v-html="item1.articleabstract"></p>
                                 <p class="time">
-                                    <span>{{item.releasetime | parseT}}</span>
+                                    <i class="iconfont icon-dianzan">&nbsp;&nbsp;{{item1.articlegives}}</i>
+                                    <i class="el-icon-view">&nbsp;&nbsp;{{item1.articleface}}</i>
+                                    <span>{{item1.releasetime | parseT}}</span>
                                 </p>
                             </div>
                             <div class="moreDiv" v-show="Allarticles[item]!=null">
@@ -44,12 +45,13 @@
                 </el-tabs>
             </div>
         </el-main>
-        <el-aside width="400px">
+        <el-aside class="hidden-xs-only" width="400px">
             <div class="author">
                 <p>🎖️他们也在创作</p>
                 <div>
                     <a v-for="item in persons" class="eachperson" @click.prevent="toPerson(item.userid)">
-                        <img :src="item.userpicture" alt="">
+                        <img :src="item.userpicture" alt="头像" v-if="item.userpicture">
+                        <img src="../assets/basicPage/7.jpg" alt="头像" v-else>
                         <div class="info">
                             <a class="name">{{item.username}}</a>
                             <div class="describe">{{item.describe}}</div>
@@ -67,7 +69,7 @@
             </div>
             <div class="chat">
                 <img src="../assets/wechat.ce329e6.png" alt="" @mouseover="displayWechat(1)"
-                     @mouseleave="displayWechat">
+                    @mouseleave="displayWechat">
                 <img src="../assets/mypofile.png" alt="" id="wechat">
             </div>
         </el-aside>
@@ -75,60 +77,71 @@
 </template>
 
 <script>
-    import {parseTime} from "../utils";
-    import {getAllClass, getAllUser, getSomeArticle} from "../axios/user";
-
+    import {
+        parseTime
+    } from "../utils";
+    import {
+        getAllClass,
+        getAllUser,
+        getSomeArticle
+    } from "../axios/user";
     export default {
         name: "basicPage",
         data() {
             return {
-                user: 'hsj',
-                activeName: '最新博文',
-                persons: [],
-                loading: false,
-                Allarticles: {
-                    '最新博文': [],
-                    '前端知识': [],
-                    '后端知识': [],
-                    '算法知识': [],
-                    '安卓': [],
-                    '电脑技巧': [],
-                    'Linux': [],
-                    '其他': []
+                activeName: '最新博文', //el-tab-pane需要用到
+                label: '最新博文', //记录当前的label
+                persons: [], //随机获取它们在创作的三个人
+                Allarticles: { //放文章
+                    '最新博文': []
                 },
-                articleClass:['最新博文','前端知识','后端知识','算法知识','安卓','电脑技巧','Linux','其他'],
-                label: '最新博文',
-                Aloading: false
+                articleClass: ['最新博文'],
+                Aloading: false, //切换pane的时候要用的的
+                loading: false //加载更多的时候要用到
             }
         },
-        mounted() {
-            getAllUser().then(result => {
+        async mounted() {
+            getAllUser().then(result => { //获取三个人的所有信息
                 this.persons = result.data.msg
             })
-            this.getSomeArticles(0, 10)
+            getAllClass().then(result => {
+                var This = this
+                let classData = result.data.msg
+                classData.forEach(function (item) {
+                    This.articleClass.push(item.classifyname)
+                    This.$set(This.Allarticles, item.classifyname, new Array())
+                })
+            })
+
+            this.Aloading = true
+            await this.getSomeArticles(0, 10) //获取最新博文，渲染首页
+            this.Aloading = false
+            
         },
         methods: {
-            handleClick(tab, event) {
-                console.log(tab);
+            async handleClick(tab, event) { //点击el-tab-pane触发事件
+                // console.log(tab);
                 this.label = tab.label
-                if (this.Allarticles[tab.label].length == 0) {
-                    this.Aloading = true
-                    this.getSomeArticles(0, 10, tab.label)
+                this.lab
+                if (this.Allarticles[tab.label].length !== 0) {
+                    return;
                 }
-                setTimeout(()=>{
+                if (this.Allarticles[tab.label].length == 0) { //如果长度是0，就渲染
+                    this.Aloading = true
+                    await this.getSomeArticles(0, 10, this.label) //从0开始获取当前分类的文章
                     this.Aloading = false
-                },300)
+                }
             },
-            toArticle(index) {
+            toArticle(index) { //跳转去相应的文章
                 let openArticle = this.$router.resolve({
                     path: '/article',
                     query: {
                         articleid: parseInt(this.Allarticles[this.label][index].articleid)
                     }
                 })
-                window.open(openArticle.href, "_blank")
+                window.open(openArticle.href, "_blank") //在新页面打开
             },
-            toPerson(userid) {
+            toPerson(userid) { //去某个人的个人中心
                 let temp = this.$router.resolve({
                     path: '/personal',
                     query: {
@@ -137,17 +150,16 @@
                 })
                 window.open(temp.href, "_blank")
             },
-            displayWechat(index) {
-                var wechat = document.getElementById("wechat")
-                if (index == 1) {
-                    wechat.style.display = "block"
-                } else {
-                    wechat.style.display = "none"
-                }
+            displayWechat(index) { //显示个人二维码
+                let wechat = document.getElementById("wechat")
+                index == 1 ? wechat.style.display = "block" : wechat.style.display = "none"
             },
-            getSomeArticles(offset, limitsum, articleclass) {
-                getSomeArticle({offset: offset, limitsum: limitsum, articleclass: articleclass}).then(result => {
-                    console.log(result)
+            async getSomeArticles(offset, limitsum, articleclass) { //获取某个类别的最新文章。参数：偏移量，获取条数，类别的文章(类别不填就当作最新博文)
+                await getSomeArticle({
+                    offset: offset,
+                    limitsum: limitsum,
+                    articleclass: articleclass
+                }).then(result => {
                     if (result.data.code == -1) {
                         this.$message({
                             type: 'success',
@@ -156,41 +168,46 @@
                     } else if (articleclass == undefined) {
                         let temp1 = this.Allarticles['最新博文'].concat(result.data.msg)
                         this.Allarticles['最新博文'] = temp1
-                        console.log(this.Allarticles['最新博文'])
                     } else {
-                        for (var item in this.Allarticles) {
-                            if (item == articleclass) {
-                                let temp1 = this.Allarticles[item].concat(result.data.msg)
-                                this.Allarticles[item] = temp1
-                                console.log(this.Allarticles[item])
-                            }
-                        }
+                        let temp1 = this.Allarticles[articleclass].concat(result.data.msg)
+                        this.Allarticles[articleclass] = temp1
                     }
                 })
             },
-            getmore() {
+            async getmore() { //获取更多的文章
                 this.loading = true
                 if (this.label == '最新博文') {
-                    this.getSomeArticles(this.Allarticles['最新博文'].length, 10)
-                    this.loading = false
+                    await this.getSomeArticles(this.Allarticles['最新博文'].length, 10)
                 } else {
-                    this.getSomeArticles(this.Allarticles[this.label].length, 10, this.label)
-                    this.loading = false
+                    await this.getSomeArticles(this.Allarticles[this.label].length, 10, this.label)
                 }
+                this.loading = false
+            },
+            pushBasicArticle(key) { //跳转去文章页
+                var temp = this.$router.resolve({
+                    path: 'article',
+                    query: {
+                        articleid: key
+                    }
+                })
+                window.open(temp.href, "_blank")
             }
         },
         filters: {
-            parseT(value) {
+            parseT(value) { //时间戳格式化
                 return parseTime(value, '{y}-{m}-{d} {h}:{i}')
             }
         }
     }
 </script>
 
-<style scoped>
-    .loading{
+<style lang="less" scoped>
+    @import "~@/assets/font/iconfont.css";
+
+    .loading {
         height: 140px;
     }
+
     .moreDiv a {
         position: relative;
         display: block;
@@ -200,9 +217,9 @@
     }
 
     .moreDiv {
-        border-bottom: 1px solid rgb(245,245,245);
-        border-left: 1px solid rgb(245,245,245);
-        border-right: 1px solid rgb(245,245,245);
+        border-bottom: 1px solid rgb(245, 245, 245);
+        border-left: 1px solid rgb(245, 245, 245);
+        border-right: 1px solid rgb(245, 245, 245);
         display: flex;
         background: white;
         height: 100px;
@@ -263,10 +280,14 @@
         max-height: 52px;
         word-break: break-all;
         text-overflow: ellipsis;
-        display: -webkit-box; /** 对象作为伸缩盒子模型显示 **/
-        -webkit-box-orient: vertical; /** 设置或检索伸缩盒对象的子元素的排列方式 **/
-        -webkit-line-clamp: 1; /** 显示的行数 **/
-        overflow: hidden; /** 隐藏超出的内容 **/
+        display: -webkit-box;
+        /** 对象作为伸缩盒子模型显示 **/
+        -webkit-box-orient: vertical;
+        /** 设置或检索伸缩盒对象的子元素的排列方式 **/
+        -webkit-line-clamp: 1;
+        /** 显示的行数 **/
+        overflow: hidden;
+        /** 隐藏超出的内容 **/
     }
 
     .info .name {
@@ -332,10 +353,14 @@
         max-height: 52px;
         word-break: break-all;
         text-overflow: ellipsis;
-        display: -webkit-box; /** 对象作为伸缩盒子模型显示 **/
-        -webkit-box-orient: vertical; /** 设置或检索伸缩盒对象的子元素的排列方式 **/
-        -webkit-line-clamp: 2; /** 显示的行数 **/
-        overflow: hidden; /** 隐藏超出的内容 **/
+        display: -webkit-box;
+        /** 对象作为伸缩盒子模型显示 **/
+        -webkit-box-orient: vertical;
+        /** 设置或检索伸缩盒对象的子元素的排列方式 **/
+        -webkit-line-clamp: 2;
+        /** 显示的行数 **/
+        overflow: hidden;
+        /** 隐藏超出的内容 **/
     }
 
     .allAritcles {
@@ -373,6 +398,10 @@
         margin-left: 30px;
     }
 
+    .allAritcles .time i:nth-child(1) {
+        font-size: 15px;
+    }
+
     .allAritcles .time {
         position: relative;
         color: #999;
@@ -403,7 +432,7 @@
         font-size: 15px;
         font-weight: 200;
         text-align: center;
-        border: 1px solid rgb(18,57,131);
+        border: 1px solid rgb(18, 57, 131);
         color: blue;
         border-radius: 10px;
     }
@@ -440,100 +469,4 @@
         padding-top: 60px;
         background-color: rgb(245, 245, 245);
     }
-
 </style>
-
-
-<!--                    <el-tab-pane label="最新博文" name="first">-->
-<!--                        <div v-for="(item,index) in Allarticles['最新博文']" class="allAritcles" @click="toArticle(index)">-->
-<!--                            <span class="articleClass" v-if="item.articleClass">{{item.articleClass}}</span>-->
-<!--                            <p class="title">{{item.articletitle}}</p>-->
-<!--                            <p class="someContent" v-html="item.articleabstract"></p>-->
-<!--                            <p class="time">-->
-<!--                                <span>{{item.releasetime | parseT}}</span>-->
-<!--                            </p>-->
-<!--                        </div>-->
-<!--                    </el-tab-pane>-->
-<!--                    <el-tab-pane label="前端知识" name="second"-->
-<!--                                 element-loading-text="拼命加载中"-->
-<!--                                 element-loading-spinner="el-icon-loading"-->
-<!--                                 element-loading-background="rgba(0, 0, 0, 0.8)"-->
-<!--                                 v-loading="this.Aloading"-->
-<!--                    >-->
-<!--                        <div v-for="(item,index) in Allarticles['前端知识']" class="allAritcles"-->
-<!--                             v-if="checkTitle(item.articleClass,`前端知识`)" @click="toArticle(index)">-->
-<!--                            <span class="articleClass" v-if="item.articleClass">{{item.articleClass}}</span>-->
-<!--                            <p class="title">{{item.articletitle}}</p>-->
-<!--                            <p class="someContent" v-html="item.articleabstract"></p>-->
-<!--                            <p class="time">-->
-<!--                                <span>{{item.releasetime | parseT}}</span>-->
-<!--                            </p>-->
-<!--                        </div>-->
-<!--                    </el-tab-pane>-->
-<!--                    <el-tab-pane label="后端知识" name="sixth">-->
-<!--                        <div v-for="(item,index) in Allarticles['后端知识']" class="allAritcles"-->
-<!--                             v-if="checkTitle(item.articleClass,`后端知识`)" @click="toArticle(index)">-->
-<!--                            <span class="articleClass" v-if="item.articleClass">{{item.articleClass}}</span>-->
-<!--                            <p class="title">{{item.articletitle}}</p>-->
-<!--                            <p class="someContent" v-html="item.articleabstract"></p>-->
-<!--                            <p class="time">-->
-<!--                                <span>{{item.releasetime | parseT}}</span>-->
-<!--                            </p>-->
-<!--                        </div>-->
-<!--                    </el-tab-pane>-->
-<!--                    <el-tab-pane label="算法知识" name="seventh">-->
-<!--                        <div v-for="(item,index) in Allarticles['算法知识']" class="allAritcles"-->
-<!--                             v-if="checkTitle(item.articleClass,`算法知识`)" @click="toArticle(index)">-->
-<!--                            <span class="articleClass" v-if="item.articleClass">{{item.articleClass}}</span>-->
-<!--                            <p class="title">{{item.articletitle}}</p>-->
-<!--                            <p class="someContent" v-html="item.articleabstract"></p>-->
-<!--                            <p class="time">-->
-<!--                                <span>{{item.releasetime | parseT}}</span>-->
-<!--                            </p>-->
-<!--                        </div>-->
-<!--                    </el-tab-pane>-->
-<!--                    <el-tab-pane label="安卓" name="third">-->
-<!--                        <div v-for="(item,index) in Allarticles['安卓']" class="allAritcles"-->
-<!--                             v-if="checkTitle(item.articleClass,`安卓`)" @click="toArticle(index)">-->
-<!--                            <span class="articleClass" v-if="item.articleClass">{{item.articleClass}}</span>-->
-<!--                            <p class="title">{{item.articletitle}}</p>-->
-<!--                            <p class="someContent" v-html="item.articleabstract"></p>-->
-<!--                            <p class="time">-->
-<!--                                <span>{{item.releasetime | parseT}}</span>-->
-<!--                            </p>-->
-<!--                        </div>-->
-<!--                    </el-tab-pane>-->
-<!--                    <el-tab-pane label="电脑技巧" name="fourth">-->
-<!--                        <div v-for="(item,index) in Allarticles['电脑技巧']" class="allAritcles"-->
-<!--                             v-if="checkTitle(item.articleClass,`电脑技巧`)" @click="toArticle(index)">-->
-<!--                            <span class="articleClass" v-if="item.articleClass">{{item.articleClass}}</span>-->
-<!--                            <p class="title">{{item.articletitle}}</p>-->
-<!--                            <p class="someContent" v-html="item.articleabstract"></p>-->
-<!--                            <p class="time">-->
-<!--                                <span>{{item.releasetime | parseT}}</span>-->
-<!--                            </p>-->
-<!--                        </div>-->
-<!--                    </el-tab-pane>-->
-<!--                    <el-tab-pane label="Linux" name="eighth">-->
-<!--                        <div v-for="(item,index) in Allarticles['Linux']" class="allAritcles"-->
-<!--                             v-if="checkTitle(item.articleClass,`Linux`)" @click="toArticle(index)">-->
-<!--                            <span class="articleClass" v-if="item.articleClass">{{item.articleClass}}</span>-->
-<!--                            <p class="title">{{item.articletitle}}</p>-->
-<!--                            <p class="someContent" v-html="item.articleabstract"></p>-->
-<!--                            <p class="time">-->
-<!--                                <span>{{item.releasetime | parseT}}</span>-->
-<!--                            </p>-->
-<!--                        </div>-->
-<!--                    </el-tab-pane>-->
-<!--                    <el-tab-pane label="其他" name="fifth">-->
-<!--                        <div v-for="(item,index) in Allarticles['其他']" class="allAritcles"-->
-<!--                             v-if="checkTitle(item.articleClass,`其他`)" @click="toArticle(index)">-->
-<!--                            <span class="articleClass" v-if="item.articleClass">{{item.articleClass}}</span>-->
-<!--                            <p class="title">{{item.articletitle}}</p>-->
-<!--                            <p class="someContent" v-html="item.articleabstract"></p>-->
-<!--                            <p class="time">-->
-<!--                                <span>{{item.releasetime | parseT}}</span>-->
-<!--                            </p>-->
-<!--                        </div>-->
-<!--                    </el-tab-pane>-->
-

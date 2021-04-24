@@ -355,3 +355,19 @@ export function removeClass(ele, cls) {
     ele.className = ele.className.replace(reg, ' ')
   }
 }
+
+/**
+ * 防抖函数debounce*/
+export function Ddebounce(fn,delay) {
+  var timer = null
+  return function () {
+    // if(timer){
+      clearTimeout(timer)
+    // }else{
+      var args = arguments
+      timer = setTimeout(()=>{
+       fn.apply(this,args)
+      },delay)
+    // }
+  }
+}

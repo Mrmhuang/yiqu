@@ -6,6 +6,8 @@ const personal = ()=>import('views/personal')
 const changeInfo = ()=>import('views/changeInfo')
 const publish = ()=>import('views/publish')
 const pageArticle = ()=>import('views/pageArticle')
+const searchPage = ()=>import('views/searchPage')
+const activity = ()=>import('views/activity')
 
 Vue.use(VueRouter)
 
@@ -31,6 +33,14 @@ const routes = [
     path: '/article',
     name: 'pageArticle',
     component: pageArticle  //主页面
+  },{
+    path: '/search',
+    name: 'searchPage',
+    component: searchPage  //主页面
+  },{
+    path: '/activity',
+    name: 'activity',
+    component: activity  //主页面
   }
 ]
 

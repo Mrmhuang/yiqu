@@ -1,7 +1,7 @@
 <template>
     <el-container>
         <el-container>
-            <el-aside width="700px">
+            <el-aside class="hidden-sm-only hidden-xs-only" width="700px">
                 <!-- 上传头像 -->
                 <div class="xian" ref="xian" @mouseleave="changeAvatar(1)">
                     <el-upload
@@ -17,49 +17,47 @@
                         <i v-else class="el-icon-plus avatar-uploader-icon"></i>
                     </el-upload>
                 </div>
-
-
                 <div class="myInfo" ref="myInfo">
                     <div class="admin" @click="checkadmin">管理员认证</div>
                     <div class="radius">
-                        <img :src="this.user.avatar" alt="" @mouseenter="changeAvatar">
+                        <img :src="this.user.avatar" alt="头像" @mouseenter="changeAvatar" v-if="this.user.avatar">
+                        <img src="../assets/basicPage/7.jpg" alt="头像" @mouseenter="changeAvatar" v-else>
                     </div>
                     <p class="name">{{user.username}}</p>
                     <p class="desc">{{user.describe}}</p>
                 </div>
             </el-aside>
+
             <el-main>
                 <div class="infoForm">
                     <p class="title">基本资料</p>
-                    <el-form ref="form" v-model="user" :inline="true" label-width="100px">
+                    <el-form ref="form" v-model="user" inline-message label-width="100px">
                         <el-form-item label="用户名">
                             <el-input v-model="user.username" disabled></el-input>
                         </el-form-item>
-<!--                        <el-form-item label="用户名">-->
-<!--                            <el-input v-model="" disabled></el-input>-->
-<!--                        </el-form-item>-->
-                        <el-form-item label="电子邮箱">
+                        <el-form-item label="电子邮箱" maxlength="16">
                             <el-input v-model="user.useremail"></el-input>
                         </el-form-item>
                         <el-form-item label="注册时间">
                             <el-input v-model="user.resigetTime" disabled></el-input>
                         </el-form-item>
                         <el-form-item label="个人说明">
-                            <el-input type="textarea" v-model="user.describe" class="text"></el-input>
+                            <el-input type="textarea" v-model="user.describe" class="text" maxlength="50"></el-input>
                         </el-form-item>
-                        <el-button type="primary" @click="saveInfo" v-if="this.$store.state.user==this.user.username">
-                            保存设置
-                        </el-button>
+                        <div>
+                            <el-button type="primary" class="baocun" @click="saveInfo" v-if="this.$store.state.user==this.user.username">
+                                保存设置
+                            </el-button>
+                        </div>
                     </el-form>
+
                 </div>
             </el-main>
         </el-container>
-        <el-footer></el-footer>
     </el-container>
 </template>
 
 <script>
-    // import {getMy} from "../axios/user";
     import {pushImg} from "../axios/user";
     import {getOnePersonal} from "../axios/user";
     import {parseTime} from "../utils";
@@ -71,26 +69,23 @@
         data() {
             return {
                 user: {
-                    username: '123',
-                    useremail: '106',
+                    username: '',
+                    useremail: '',
                     resigetTime: '',
                     describe: '这个人很懒，什么都没有留下~',
                     avatar:null
                 },
                 imageUrl: "",  //头像地址
-                action: `${process.env.VUE_APP_BASE_API}/upload/avatar`,
-                addXian: true
+                action: `http://49.235.46.53:7000/upload/avatar`
             }
         },
         mounted() {
-            getOnePersonal(this.$route.query.id).then((result) => {
-                console.log(result)
+            getOnePersonal(this.$route.query.id).then((result) => {  //获取个人信息
                 this.user.avatar = result.data.data[0].userpicture
                 this.user.username = result.data.data[0].username
                 this.user.useremail = result.data.data[0].useremail
                 this.user.describe = result.data.data[0].describe
                 this.user.resigetTime = parseTime(result.data.data[0].registertime, '{y}-{m}-{d}')
-                console.log('this.user.avatar',this.user.avatar)
             }).catch(e => {
                 console.log(e)
             })
@@ -99,7 +94,7 @@
             ...mapMutations([
                 'SET_AVATAR'
             ]),
-            saveInfo() {
+            saveInfo() {  //保存个人信息
                 this.$store.dispatch("saveInfo", this.user).then(result => {
                     this.$message({
                         type: 'success',
@@ -107,41 +102,48 @@
                     })
                 })
             },
-            handleAvatarSuccess(res, file) {
-                console.log(res)
+            handleAvatarSuccess(res, file) {  //上传头像
                 if(this.$store.state.id!==null){
-                    var path = res.data.path.replace(/\\/g,'/');
-                    pushImg(path,this.$store.state.userid).then(result=>{
-                        console.log(result)
-                    })
                     this.$store.commit('SET_AVATAR', res.data.path)
-                    this.$message({
-                        type: 'success',
-                        message: '上传成功'
+                    var path = res.data.path.replace(/\\/g,'/');
+                    pushImg(path,this.$store.state.userid).then(result=>{  //添加头像进数据库
+                        this.$message({
+                            type: 'success',
+                            message: '上传成功'
+                        })
+                        setTimeout(()=>{
+                            location.reload()
+                        },200)
                     })
+
                 }else{
-                    window.location.href = 'http://localhost:8080/'
+                    this.$message({
+                        type: 'warning',
+                        message: '请先登陆'
+                    })
+                    this.$router.push('/')
                 }
             },
-            beforeAvatarUpload(file) {
+            beforeAvatarUpload(file) {  //头像上传前的限制
                 const isLt2M = file.size / 1024 / 1024 < 2;
+                // console.log(isLt2M)
                 if (!isLt2M) {
                     this.$message.error('上传头像图片大小不能超过 2MB!');
                 }
                 return isLt2M;
             },
-            changeAvatar(index) {
+            changeAvatar(index) {  //修改头像
                 if (index == 1) {
                     this.$refs.xian.style.display = 'none'
                 } else {
                     this.$refs.xian.style.display = 'block'
                 }
             },
-            checkadmin(){
+            checkadmin(){  //管理员凭证
                 this.$prompt('请输入你的管理员凭证', '提示', {
                     confirmButtonText: '确定',
                     cancelButtonText: '取消',
-                    inputPattern: /\d*/,
+                    inputPattern: /^qweiopasdjkl$/,
                     inputErrorMessage: '凭证格式不正确'
                 }).then(({ value }) => {
                     addAdmin(this.$store.state.userid,this.$store.state.user).then(result=>{
@@ -164,6 +166,8 @@
 <style scoped>
     .desc {
         color: #99a9bf;
+        width: 80%;
+        margin: 0 auto;
     }
 
     .name {
@@ -176,6 +180,12 @@
         position: absolute;
         bottom: -100px;
         right: 300px;
+    }
+
+    .baocun{
+        position: absolute;
+        right: 50px;
+        bottom: -50px;
     }
 
     .text {
@@ -191,9 +201,6 @@
         width: 100%;
     }
 
-    .el-form-item {
-        width: 800px;
-    }
 
     .infoForm .title {
         height: 80px;
@@ -210,13 +217,18 @@
     }
 
     .radius {
+        display: inline-block;
+        width: 120px;
+        height: 120px;
         border-radius: 50%;
     }
 
     .infoForm {
-        height: 700px;
+        position: relative;
+        height: 100%;
         background: white;
-        width: 80%;
+        width: 100%;
+        min-height: 500px;
     }
 
     .myInfo {
@@ -250,7 +262,8 @@
     }
 
     .el-main {
-        padding: 70px 0;
+        /*padding: 70px 0;*/
+        height: 100%;
     }
 
     .el-footer {
@@ -259,6 +272,7 @@
     }
 
     .el-container {
+        min-height: 90vh;
         background: rgb(243, 243, 243);
     }
 
@@ -284,7 +298,8 @@
     }
 
     .avatar-uploader:hover {
-        background: #99a9bf;
+        border-radius: 50%;
+        background: rgb(240,240,240);
         color: #42b983;
     }
 
@@ -302,4 +317,7 @@
         padding-top: 60px;
     }
 
+    /deep/ .el-input__inner,/deep/ .el-textarea__inner{
+        width: 55%;
+    }
 </style>

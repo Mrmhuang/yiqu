@@ -2,20 +2,23 @@
   <div id="app">
     <hea></hea>  <!-- 头部 -->
     <router-view/>
+    <foo></foo>
   </div>
 </template>
 
 <script>
   import hea from "components/header";
+  import foo from "./components/foo";
   export default {
     name: "App",
     components:{
-      hea
+      hea,
+      foo
     }
   }
 </script>
 
-<style>
+<style lang="less">
   *{
     margin: 0;
     padding: 0;
@@ -26,4 +29,5 @@
   a{
     text-decoration: none;
   }
+  /*/deep/ */
 </style>
