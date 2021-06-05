@@ -1,0 +1,174 @@
+@import "~assets/font/iconfont.css";
+.el-container {
+  display: block;
+  height: auto;
+  min-height: calc(100vh - 60px);
+  background-color: rgb(245, 245, 245);
+  padding-top: 70px;
+
+  .search {
+    line-height: 50px;
+    height: 50px;
+    width: 85%;
+    margin: 0 auto;
+    .searchresult{
+      display: none;
+      border-radius: 5px;
+      position: absolute;
+      z-index: 1999;
+      background-color: white;
+      box-shadow: 0 0 0 3px rgb(240,240,240);
+      top: 48px;
+      width: 75%;
+      padding: 10px 0;
+    }
+
+    .searchresult ul{
+      height: auto;
+    }
+
+    .searchresult ul li{
+      width: auto;
+      height: 50px;
+      line-height: 50px;
+      font-size: 15px;
+      overflow:hidden;
+      text-overflow:ellipsis;
+      white-space:nowrap;
+      cursor: pointer;
+      padding: 0 10px 0;
+    }
+
+    .searchresult ul li:hover{
+      background-color: #42b983;
+    }
+  }
+
+  .content {
+    width: 85%;
+    margin: 0 auto;
+
+    .border-card {
+      margin-top: 10px;
+      /*width: 80%;*/
+    }
+  }
+
+  .articleClass {
+    position: absolute;
+    height: 10px;
+    line-height: 10px;
+    display: block;
+    padding: 10px;
+    background: rgba(0, 0, 0, .6);
+    color: white;
+    font-size: 8px;
+    right: 20px;
+  }
+
+  .someContent {
+    margin-top: 10px;
+    color: rgb(96, 98, 102);
+    font-size: 16px;
+    height: 45px;
+    max-height: 52px;
+    word-break: break-all;
+    text-overflow: ellipsis;
+    display: -webkit-box; /** 对象作为伸缩盒子模型显示 **/
+    -webkit-box-orient: vertical; /** 设置或检索伸缩盒对象的子元素的排列方式 **/
+    -webkit-line-clamp: 2; /** 显示的行数 **/
+    overflow: hidden; /** 隐藏超出的内容 **/
+  }
+
+  .allAritcles {
+    font-size: 14px;
+    border-bottom-color: rgba(176, 173, 168);
+    padding: 20px 20px;
+    overflow: hidden;
+    border: 1px solid rgba(230, 239, 239);
+    min-height: 100px;
+
+    .time span {
+      position: absolute;
+      right: 0;
+    }
+
+    .title {
+      cursor: pointer;
+      font-size: 21px;
+      font-weight: 500;
+      color: black;
+      font-family: inherit;
+      color: rgb(54, 57, 59);
+    }
+
+    .title:hover {
+      color: blue;
+    }
+
+    i {
+      cursor: pointer;
+      color: #999;
+    }
+
+    .time i:nth-child(2) {
+      margin-left: 30px;
+    }
+
+    .time i:nth-child(1),.time i:nth-child(2) {
+      font-size: 18px;
+      font-weight: 500;
+    }
+
+    .time {
+      position: relative;
+      color: #999;
+      top: 10px;
+    }
+  }
+
+  .allAritcles:hover {
+    background: rgb(230, 235, 245);
+  }
+
+  .moreDiv {
+    border-bottom: 1px solid rgb(245, 245, 245);
+    border-left: 1px solid rgb(245, 245, 245);
+    border-right: 1px solid rgb(245, 245, 245);
+    display: flex;
+    background: white;
+    height: 100px;
+
+    a {
+      position: relative;
+      display: block;
+      margin: 0 auto;
+      top: 50%;
+      transform: translate(0, -50%);
+    }
+
+    .more {
+      width: 250px;
+      height: 50px;
+      line-height: 50px;
+      font-size: 15px;
+      font-weight: 200;
+      text-align: center;
+      border: 1px solid rgb(18, 57, 131);
+      color: blue;
+      border-radius: 10px;
+    }
+
+    .more:hover {
+      background: blue;
+      color: white
+    }
+
+    .none{
+      display: block;
+      font-size: 20px;
+      color: #6b6b6b;
+      text-align: center;
+    }
+  }
+}

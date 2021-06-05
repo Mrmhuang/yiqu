@@ -1,5 +1,13 @@
 import request from "./request";
 
+export function getDocx(){
+    return request({
+        url:'/upload/returndocx',
+        method:'get',
+        responseType: "blob"
+    })
+}
+
 export function getUser(data) {   //通过账号密码查看是否有该用户
     return request({
         url:'/user/login',
@@ -345,3 +353,9 @@ export function deleteArt(articleid) {
     })
 }
 
+export function getHotRead() {
+    return request({
+        url:'/user/hotRead',
+        method:'get'
+    })
+}

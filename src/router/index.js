@@ -1,13 +1,12 @@
 import Vue from 'vue'
 import VueRouter from 'vue-router'
 
-const basicPage = ()=>import('views/basicPage')  //这样写是为了路由懒加载
-const personal = ()=>import('views/personal')
-const changeInfo = ()=>import('views/changeInfo')
-const publish = ()=>import('views/publish')
-const pageArticle = ()=>import('views/pageArticle')
-const searchPage = ()=>import('views/searchPage')
-const activity = ()=>import('views/activity')
+const basicPage = ()=>import('views/basicPage/basicPage.vue')  //路由懒加载
+const personal = ()=>import('views/personal/personal.vue')
+const changeInfo = ()=>import('views/changeInfo/changeInfo.vue')
+const publish = ()=>import('views/publish/publish.vue')
+const pageArticle = ()=>import('views/pageArticle/pageArticle.vue')
+const searchPage = ()=>import('views/searchPage/searchPage.vue')
 
 Vue.use(VueRouter)
 
@@ -28,19 +27,15 @@ const routes = [
   },{
     path: '/publish',
     name: 'publish',
-    component: publish  //主页面
+    component: publish  //文章发布页
   },{
     path: '/article',
     name: 'pageArticle',
-    component: pageArticle  //主页面
+    component: pageArticle  //文章页
   },{
     path: '/search',
     name: 'searchPage',
-    component: searchPage  //主页面
-  },{
-    path: '/activity',
-    name: 'activity',
-    component: activity  //主页面
+    component: searchPage  //查询页
   }
 ]
 

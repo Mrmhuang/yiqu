@@ -2,12 +2,11 @@ import axios from 'axios'
 import store from '@/store'
 import {getToken} from "../utils/auth";
 
-const url = 'http://localhost:7000'
-// const url = 'http://49.235.46.53:7000'
+// const url = 'https://127.0.0.1/'
+const url = 'http://49.235.46.53:7000'
 
 const service = axios.create({
-    baseURL: url,  //process.env.VUE_APP_BASE_API
-    // withCredentials:true,
+    baseURL: url,
     timeout: 10000
 })
 

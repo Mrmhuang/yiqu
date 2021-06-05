@@ -1,6 +1,7 @@
 <template>
   <div id="app">
-    <hea></hea>  <!-- 头部 -->
+    <div class='popContainer' @mousewheel.prevent v-show="isRoll" ></div>
+    <hea @isroll="changeRoll"></hea>
     <router-view/>
     <foo></foo>
   </div>
@@ -14,6 +15,16 @@
     components:{
       hea,
       foo
+    },
+    data(){
+      return{
+        isRoll:false
+      }
+    },
+    methods:{
+      changeRoll(val){
+        this.isRoll = val
+      }
     }
   }
 </script>
@@ -22,6 +33,16 @@
   *{
     margin: 0;
     padding: 0;
+  }
+
+  div.popContainer {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.4);
+    z-index: 2000;
   }
   li{
     list-style: none;

@@ -1,121 +1,108 @@
 <template>
-    <div class="maincontent">
-        <el-drawer :append-to-body="true" :modal-append-to-body="false" title="最近十条管理员登陆的记录" :visible.sync="table"
-            direction="rtl" size="50%">
-            <el-table :data="admindata" style="width: 100%">
-                <el-table-column prop="adminid" label="管理员id" width="180">
-                </el-table-column>
-                <el-table-column prop="adminname" label="管理员姓名" width="180">
-                </el-table-column>
-                <el-table-column prop="logtime" label="登陆时间">
-                    <template slot-scope="scope">{{ scope.row.logtime | parseT }}</template>
-                </el-table-column>
-            </el-table>
-        </el-drawer>
-        <el-container>
-            <div :class="[{log:true},{ishidden:loghiddenOrNot}]">
-                <div class="loginpage" v-if="this.page==1">
-                    <p class="headtitle">易趣</p>
-                    <i class="el-icon-circle-close" @click="logToTrue"></i>
-                    <el-form ref="submitForm" class="submitForm" :model="submitForm" :rules="LoginRules"
-                        name="submitForm" key='submitForm'>
-                        <el-form-item label="账号" prop="user">
-                            <el-input type="text" v-model="submitForm.user" autocomplete="off" clearable></el-input>
-                        </el-form-item>
-                        <el-form-item label="密码" prop="password">
-                            <el-input type="password" v-model="submitForm.password" autocomplete="on" clearable
-                                show-password></el-input>
-                        </el-form-item>
-                        <slide-verify :l="42" :r="10" :w="310" :h="155" :imgs="imgs" slider-text="向右滑动"
-                            @success="onSuccess" @fail="onFail" @refresh="onRefresh"></slide-verify>
-                        <p class="reg">还没有账号? <a href="#" @click="changeLoghiddenOrNot(0)">立即注册</a></p>
-                        <el-button type="primary" @click.native.prevent="loginPlease('submitForm')">登陆</el-button>
-                    </el-form>
+    <div>
+        <el-header>
+            <div class="head-item">
+                <div class="head-left">
+                    <ul>
+                        <li class="headtitle">易趣</li>
+                        <li class="hidden-sm-only"><a href="/">首页</a></li>
+                    </ul>
                 </div>
-                <div class="registerpage" v-else>
-                    <p class="headtitle">易趣</p>
-                    <i class="el-icon-circle-close" @click="logToTrue"></i>
-                    <el-form ref="registerForm" class="submitForm" :model="registerForm" :rules="LoginRules"
-                        name="registerForm" key='registerForm'>
-                        <el-form-item label="请输入账号" prop="user">
-                            <el-input type="text" v-model="registerForm.user" autocomplete="on" clearable></el-input>
-                        </el-form-item>
-                        <el-form-item label="请输入密码" prop="password">
-                            <el-input placeholder="请输入密码" type="password" v-model="registerForm.password"
-                                autocomplete="on" clearable show-password></el-input>
-                        </el-form-item>
-                        <el-form-item label="再次确认密码" prop="checkpass">
-                            <el-input type="password" v-model="registerForm.checkpass" autocomplete="off" clearable
-                                show-password></el-input>
-                        </el-form-item>
-                        <p class="reg">已有账号? <a href="#" @click="changeLoghiddenOrNot(1)">马上登陆</a></p>
-                        <el-button type="primary" @click.native.prevent="registerPlease('registerForm')">注册</el-button>
-                    </el-form>
-                </div>
-            </div>
-            <el-header>
-                <div class="head-item">
-                    <div class="head-left">
+                <div class="search hidden-xs-only" v-if="this.$route.path!=='/search'">
+                    <el-input v-model="searchContent" placeholder="探索易趣" class="search-input" size="medium"
+                              clearable @keyup.enter.native="searchArticle()">
+                    </el-input>
+                    <el-button type="primary" @click.native.prevent="searchArticle()">搜索</el-button>
+                    <div class="searchresult">
                         <ul>
-                            <li class="headtitle">易趣</li>
-                            <li class="hidden-sm-only"><a href="/">首页</a></li>
-                            <li class="hidden-xs-only"><a href="/activity">活动</a></li>
+                            <li v-for="item in this.searchList" @click="toArticle(item.articleid)">
+                                {{item.articletitle}}
+                            </li>
                         </ul>
                     </div>
-                    <div class="search hidden-xs-only" v-if="this.$route.path!=='/search'">
-                        <el-input v-model="searchContent" placeholder="探索易趣" class="search-input" size="medium"
-                            clearable @keydown.native="fn" @focus="fn">
-                        </el-input>
-                        <el-button type="primary" @click.native.prevent="searchArticle()">搜索</el-button>
-                        <div class="searchresult">
-                            <ul>
-                                <li v-for="item in this.searchList" @click="toArticle(item.articleid)">
-                                    {{item.articletitle}}
-                                </li>
-                            </ul>
-                        </div>
-                    </div>
-                    <div class="login" v-if="!this.$store.state.user">
-                        <span @click="changeLoghiddenOrNot(1)">登陆</span> | <span
-                            @click="changeLoghiddenOrNot(0)">注册</span>
-                    </div>
-                    <div class="login" v-else>
-                        <el-dropdown>
+                </div>
+                <div class="login" v-if="!this.$store.state.user">
+                    <span @click="changeLoghiddenOrNot(1)">登陆</span> | <span
+                        @click="changeLoghiddenOrNot(0)">注册</span>
+                </div>
+                <div class="login" v-else>
+                    <el-dropdown>
                             <span class="el-dropdown-link">
                                 <i class="el-icon-arrow-down el-icon-user-solid"></i>
                                 {{this.$store.state.user}}
                                 <i class="el-icon-arrow-down el-icon--right"></i>
                             </span>
-                            <el-dropdown-menu class="hidden-sm-and-down" slot="dropdown">
-                                <el-dropdown-item @click.native="toPersonal">个人中心</el-dropdown-item>
-                                <el-dropdown-item v-if="this.$store.state.role" @click.native="turnAdminInfo">管理员信息
-                                </el-dropdown-item>
-                                <el-dropdown-item @click.native="logout">退出</el-dropdown-item>
-                            </el-dropdown-menu>
-                            <el-dropdown-menu class="hidden-sm-and-up" slot="dropdown">
-                                <el-dropdown-item @click.native="toPersonal">个人中心</el-dropdown-item>
-                                <el-dropdown-item @click.native="publish">发文章</el-dropdown-item>
-                                <el-dropdown-item @click.native="toChangeInfo">关于我</el-dropdown-item>
-                                <el-dropdown-item @click.native="toSearch">找文章</el-dropdown-item>
-                                <el-dropdown-item @click.native="toActivity">活动中心</el-dropdown-item>
-                                <el-dropdown-item v-if="this.$store.state.role" @click.native="turnAdminInfo">管理员信息
-                                </el-dropdown-item>
-                                <el-dropdown-item @click.native="logout">退出</el-dropdown-item>
-                            </el-dropdown-menu>
-                        </el-dropdown>
-                        <el-button type="danger" plain class="danger hidden-xs-only" @click="publish">发文章</el-button>
-                    </div>
+                        <el-dropdown-menu class="hidden-sm-and-down" slot="dropdown">
+                            <el-dropdown-item @click.native="toPersonal">个人中心</el-dropdown-item>
+                            <el-dropdown-item @click.native="logout">退出</el-dropdown-item>
+                        </el-dropdown-menu>
+                        <el-dropdown-menu class="hidden-sm-and-up" slot="dropdown">
+                            <el-dropdown-item @click.native="toPersonal">个人中心</el-dropdown-item>
+                            <el-dropdown-item @click.native="publish">发文章</el-dropdown-item>
+                            <el-dropdown-item @click.native="toChangeInfo">关于我</el-dropdown-item>
+                            <el-dropdown-item @click.native="toSearch">找文章</el-dropdown-item>
+                            <el-dropdown-item @click.native="toActivity">活动中心</el-dropdown-item>
+                            <el-dropdown-item @click.native="logout">退出</el-dropdown-item>
+                        </el-dropdown-menu>
+                    </el-dropdown>
+                    <el-button type="danger" plain class="danger hidden-xs-only" @click="publish">发文章</el-button>
                 </div>
-            </el-header>
-        </el-container>
+            </div>
+        </el-header>
+        <div class="maincontent">
+            <el-container>
+                <transition name="fade">
+                    <div :class="[{log:true}]" v-show="!loghiddenOrNot" v-loading="loading">
+                        <div class="loginpage" v-if="this.page==1">
+                            <p class="headtitle">易趣</p>
+                            <i class="el-icon-circle-close" @click="logToTrue"></i>
+                            <el-form ref="submitForm" class="submitForm" :model="submitForm" :rules="LoginRules"
+                                     name="submitForm" key='submitForm'>
+                                <el-form-item label="账号" prop="user">
+                                    <el-input type="text" v-model="submitForm.user" autocomplete="off" clearable></el-input>
+                                </el-form-item>
+                                <el-form-item label="密码" prop="password">
+                                    <el-input type="password" v-model="submitForm.password" autocomplete="on" clearable
+                                              show-password></el-input>
+                                </el-form-item>
+                                <slide-verify :l="42" :r="10" :w="310" :h="155" :imgs="imgs" slider-text="向右滑动"
+                                              @success="onSuccess" @fail="onFail" @refresh="onRefresh"></slide-verify>
+                                <p class="reg">还没有账号? <a href="#" @click="changeLoghiddenOrNot(0)">立即注册</a></p>
+                                <el-button type="primary" @click.native.prevent="loginPlease('submitForm')">登陆</el-button>
+                            </el-form>
+                        </div>
+                        <div class="registerpage" v-else>
+                            <p class="headtitle">易趣</p>
+                            <i class="el-icon-circle-close" @click="logToTrue"></i>
+                            <el-form ref="registerForm" class="submitForm" :model="registerForm" :rules="LoginRules"
+                                     name="registerForm" key='registerForm'>
+                                <el-form-item label="请输入账号" prop="user">
+                                    <el-input type="text" v-model="registerForm.user" autocomplete="on" clearable></el-input>
+                                </el-form-item>
+                                <el-form-item label="请输入密码" prop="password">
+                                    <el-input placeholder="请输入密码" type="password" v-model="registerForm.password"
+                                              autocomplete="on" clearable show-password></el-input>
+                                </el-form-item>
+                                <el-form-item label="再次确认密码" prop="checkpass">
+                                    <el-input type="password" v-model="registerForm.checkpass" autocomplete="off" clearable
+                                              show-password></el-input>
+                                </el-form-item>
+                                <p class="reg">已有账号? <a href="#" @click="changeLoghiddenOrNot(1)">马上登陆</a></p>
+                                <el-button type="primary" @click.native.prevent="registerPlease('registerForm')">注册</el-button>
+                            </el-form>
+                        </div>
+                    </div>
+                </transition>
+            </el-container>
+        </div>
     </div>
 </template>
 
 <script>
-    import img0 from "../assets/img.jpg"
-    import img1 from "../assets/img1.jpg"
-    import img2 from "../assets/img2.jpg"
-    import img3 from "../assets/img3.jpg"
+    import img0 from "../assets/img/img.jpg"
+    import img1 from "../assets/img/img1.jpg"
+    import img2 from "../assets/img/img2.jpg"
+    import img3 from "../assets/img/img3.jpg"
     import {
         getCourrstage,
         postSearchContent
@@ -145,7 +132,6 @@
                 }
             }
             var validPassword = function (rule, value, callback) {
-                // console.log(value.length)
                 if (value === '') {
                     callback(new Error('密码不能为空'))
                 } else if (/^[a-z0-9A-Z]{6,18}$/.exec(value)) {
@@ -156,8 +142,6 @@
             }
             var This = this
             var validCheckPassword = function (rule, value, callback) {
-                // console.log('value',value,'pass',This.registerForm.password)
-                // console.log(value == This.registerForm.password)
                 if (value !== This.registerForm.password) {
                     callback(new Error('两次密码不一致'))
                 } else {
@@ -176,8 +160,6 @@
                 },
                 loghiddenOrNot: true,
                 page: 1, //1表示登录页，0表示注册页
-                admindata: [], //记录了管理员的登陆信息
-                table: false, //抽屉所需的数据
                 direction: 'rtl', //抽屉的打开方式
                 LoginRules: {
                     user: [{
@@ -201,7 +183,8 @@
                     img2,
                     img3
                 ],
-                yanzheng: false
+                yanzheng: false,
+                loading: false
             }
         },
         methods: {
@@ -234,12 +217,17 @@
                     var searchresult = document.querySelector('.searchresult')
                     let res = result.data
                     if (res.data) {
+                        console.log(res.data)
                         this.searchList = res.data
                         searchresult.style.display = 'block'
                     }
                 })
             },
             changeLoghiddenOrNot(index) { //切换表单用到，点登陆和注册要用到
+                // this.loading = true
+                // setTimeout(()=>{
+                //     this.loading = false
+                // },500)
                 this.loghiddenOrNot = false
                 this.page = index
             },
@@ -281,7 +269,6 @@
                 this.$refs[formname].validate(valid => {
                     if (valid) {
                         this.$store.dispatch('register', this.registerForm).then(result => {
-                            console.log(result)
                             if (result.data.code !== -1) {
                                 this.page = 1
                                 this.submitForm.user = result.data.user
@@ -325,12 +312,6 @@
             publish() { //跳转去发布页
                 this.$router.push('/publish')
             },
-            turnAdminInfo() {
-                getCourrstage().then(result => { //获取管理员登陆信息
-                    this.admindata = result.data.data
-                    this.table = true
-                })
-            },
             toChangeInfo() { //跳去个人信息修改页
                 this.$router.push({
                     path: '/changeInfo',
@@ -350,207 +331,207 @@
                 })
             },
             onSuccess() {
-                console.log('成功了')
                 this.yanzheng = true
             },
             onFail() {
-                console.log('失败了')
                 this.yanzheng = false
             },
             onRefresh() {
                 this.yanzheng = false
-                console.log('刷新了')
             }
         },
-        filters: {
-            parseT(value) { //时间戳格式化
-                return parseTime(value, '{y}-{m}-{d} {h}:{i}')
+        watch:{
+            loghiddenOrNot(val){
+                this.$emit('isroll',!val)
             }
         }
     }
 </script>
-
-
+<style>
+    .el-loading-mask{
+        background-color: white !important;
+    }
+</style>
 <style lang="less" scoped>
+
+    .fade-enter-active, .fade-leave-active {
+        transition: opacity .3s;
+    }
+    .fade-enter, .fade-leave-to /* .fade-leave-active below version 2.1.8 */ {
+        opacity: 0;
+    }
+
     .maincontent {
         position: fixed;
         width: 100vw;
-        z-index: 2000;
         margin-bottom: 150px;
-        box-shadow: 0 0 3px 1px gray;
-
-        .el-header {
-            background-color: rgb(255, 255, 255);
-
-            .head-item {
-                display: flex;
-                height: 60px;
-                justify-content: space-around;
-
-                >div {
-                    line-height: 60px;
-                }
-
-                >div ul li a:hover {
-                    color: lightblue;
-                }
-
-                .login {
-                    height: 60px;
-                    width: auto;
-
-                    span:hover {
-                        color: deepskyblue;
-                    }
-
-                    span {
-                        margin-right: 10px;
-                        color: gray;
-                        cursor: pointer;
-                    }
-
-                    .danger {
-                        width: auto;
-                        height: 40px;
-                        text-align: center;
-                    }
-
-                }
-            }
-
-            .search {
-                position: relative;
-                height: 60px;
-
-                .el-input {
-                    width: 70%;
-                }
-
-                .searchresult {
-                    display: none;
-                    border-radius: 5px;
-                    position: absolute;
-                    z-index: 1999;
-                    background-color: white;
-                    box-shadow: 0 0 0 3px rgb(240, 240, 240);
-                    top: 52px;
-                    width: 260px;
-                    padding: 10px 0;
-                }
-
-                .searchresult ul {
-                    height: auto;
-                }
-
-                .searchresult ul li {
-                    width: auto;
-                    height: 50px;
-                    line-height: 50px;
-                    font-size: 15px;
-                    overflow: hidden;
-                    text-overflow: ellipsis;
-                    white-space: nowrap;
-                    cursor: pointer;
-                    padding: 0 10px 0;
-                }
-
-                .searchresult ul li:hover {
-                    background-color: #42b983;
-                }
-
-                .el-button {
-                    display: inline-block;
-                    height: 38px;
-                    border-radius: 5px;
-                    margin-left: 4px;
-                }
-
-            }
-
-            .head-left {
-                width: auto;
-
-                .headtitle {
-                    font-size: 30px;
-                    position: relative;
-                    right: 10%;
-                    font-weight: 500;
-                    color: darkcyan;
-                }
-
-                >ul li {
-                    float: left;
-                    margin-left: 30px;
-                }
-
-                >ul li a {
-                    font-size: 20px;
-                    font-weight: 500;
-                    color: #71777c;
-                }
-
-            }
-        }
+        box-shadow: 0 0 4px 0 gray;
+        z-index: 2000;
 
         .el-aside {
             background-color: wheat;
         }
 
-        .el-main {
-            background-color: gold;
+        .log {
+            position: fixed;
+            left: 50%;
+            top: 50%;
+            width: 30%;
+            height: auto;
+            transform: translate(-50%, -50%);
+            background: rgb(255, 255, 255);
+            border-radius: 5px;
+            padding: 50px 25px;
+            box-shadow: 0 0 1px 0 gray;
+
+            p.headtitle {
+                font-size: 30px;
+                text-align: center;
+                font-weight: 500;
+                color: darkcyan;
+            }
+
+
+            .el-icon-circle-close {
+                position: absolute;
+                top: 20px;
+                right: 20px;
+                font-size: 20px;
+                cursor: pointer;
+            }
+
+            .el-form-item {
+                margin-top: -5px;
+            }
+
+            .submitForm .el-button {
+                width: 100%;
+                margin-top: 30px;
+            }
+
+            .reg a:hover {
+                color: deepskyblue;
+            }
         }
 
-        .el-container {
-            .log {
-                position: fixed;
-                z-index: 999;
-                left: 50%;
-                top: 50%;
-                width: 30%;
-                height: auto;
-                transform: translate(-50%, -50%);
-                background: rgb(255, 255, 255);
-                border-radius: 5px;
-                padding: 50px 25px;
+    }
 
-                p.headtitle {
-                    font-size: 30px;
-                    text-align: center;
-                    font-weight: 500;
-                    color: darkcyan;
+    .el-header {
+        background-color: rgb(255, 255, 255);
+        position: fixed;
+        width: 100vw;
+        z-index: 1000;
+        border-bottom: 1px solid gainsboro;
+        box-shadow: 0 0 1px 0 gray;
+        .head-item {
+            display: flex;
+            height: 60px;
+            justify-content: space-around;
+
+            >div {
+                line-height: 60px;
+            }
+
+            >div ul li a:hover {
+                color: lightblue;
+            }
+
+            .login {
+                height: 60px;
+                width: auto;
+
+                span:hover {
+                    color: deepskyblue;
                 }
 
-                .loginpage,
-                .registerpage {
-                    z-index: 4000;
-                }
-
-                .el-icon-circle-close {
-                    position: absolute;
-                    top: 20px;
-                    right: 20px;
-                    font-size: 20px;
+                span {
+                    margin-right: 10px;
+                    color: gray;
                     cursor: pointer;
                 }
 
-                .el-form-item {
-                    margin-top: -5px;
+                .danger {
+                    width: auto;
+                    height: 40px;
+                    text-align: center;
                 }
 
-                .submitForm .el-button {
-                    width: 100%;
-                    margin-top: 30px;
-                }
-
-                .reg a:hover {
-                    color: deepskyblue;
-                }
-            }
-
-            .ishidden {
-                display: none;
             }
         }
+
+        .search {
+            position: relative;
+            height: 60px;
+
+            .el-input {
+                width: 70%;
+            }
+
+            .searchresult {
+                display: none;
+                border-radius: 5px;
+                position: absolute;
+                z-index: 1999;
+                background-color: white;
+                box-shadow: 0 0 0 3px rgb(240, 240, 240);
+                top: 52px;
+                width: 260px;
+                padding: 10px 0;
+            }
+
+            .searchresult ul {
+                height: auto;
+            }
+
+            .searchresult ul li {
+                width: auto;
+                height: 50px;
+                line-height: 50px;
+                font-size: 15px;
+                overflow: hidden;
+                text-overflow: ellipsis;
+                white-space: nowrap;
+                cursor: pointer;
+                padding: 0 10px 0;
+            }
+
+            .searchresult ul li:hover {
+                background-color: #42b983;
+            }
+
+            .el-button {
+                display: inline-block;
+                height: 38px;
+                border-radius: 5px;
+                margin-left: 4px;
+            }
+
+        }
+
+        .head-left {
+            width: auto;
+
+            .headtitle {
+                font-size: 30px;
+                position: relative;
+                right: 10%;
+                font-weight: 500;
+                color: darkcyan;
+            }
+
+            >ul li {
+                float: left;
+                margin-left: 30px;
+            }
+
+            >ul li a {
+                font-size: 20px;
+                font-weight: 500;
+                color: #71777c;
+            }
+
+        }
+
     }
 
     @media all and (max-width :768px) {

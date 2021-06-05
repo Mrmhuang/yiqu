@@ -1,0 +1,23 @@
+{
+  "id": "",
+  "name": "",
+  "font_family": "iconfont",
+  "css_prefix_text": "icon-",
+  "description": "",
+  "glyphs": [
+    {
+      "icon_id": "5636737",
+      "name": "返回顶部",
+      "font_class": "huidingbu",
+      "unicode": "e503",
+      "unicode_decimal": 58627
+    },
+    {
+      "icon_id": "19663562",
+      "name": "阅读",
+      "font_class": "yuedu",
+      "unicode": "e629",
+      "unicode_decimal": 58921
+    }
+  ]
+}
